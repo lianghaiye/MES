@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I-DOMS - 智能制造执行系统</title>
+<link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/element-plus/dist/index.full.min.js"></script>
+<script src="https://unpkg.com/@element-plus/icons-vue/dist/index.iife.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 13px; }
+:root {
+  --header-height: 48px;
+  --sidebar-width: 200px;
+  --sidebar-collapsed-width: 54px;
+  --primary: #1677ff;
+  --primary-light: #e8f4ff;
+  --primary-hover: #4096ff;
+  --border: #e4e7ed;
+  --bg: #f0f2f5;
+  --text1: #303133;
+  --text2: #606266;
+  --text3: #909399;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+/* ──────────── LAYOUT ──────────── */
+#app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+/* HEADER */
+.i-header {
+  height: var(--header-height);
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 12px; flex-shrink: 0; z-index: 100;
+  gap: 0;
+}
+.logo { display: flex; align-items: center; gap: 6px; min-width: 108px; cursor: pointer; }
+.logo-box { width: 26px; height: 26px; background: var(--primary); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: 14px; }
+.logo-text { font-size: 16px; font-weight: 700; color: var(--primary); letter-spacing: 1px; }
+.header-nav { flex: 1; display: flex; align-items: center; gap: 2px; padding: 0 6px; overflow: hidden; }
+.nav-item {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 4px; cursor: pointer;
+  color: var(--text2); font-size: 13px; transition: all .18s;
+  white-space: nowrap; height: 32px; user-select: none;
+}
+.nav-item:hover { background: #f5f7fa; color: var(--primary); }
+.nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 500; }
+.nav-more-btn { padding: 4px 10px; border-radius: 4px; cursor: pointer; color: var(--text3); font-size: 13px; height: 32px; display: flex; align-items: center; gap: 4px; }
+.nav-more-btn:hover { background: #f5f7fa; color: var(--primary); }
+.header-right { display: flex; align-items: center; gap: 14px; }
+.h-icon { font-size: 17px; color: #666; cursor: pointer; transition: color .2s; }
+.h-icon:hover { color: var(--primary); }
+.user-btn { display: flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 4px; cursor: pointer; transition: background .2s; }
+.user-btn:hover { background: #f5f7fa; }
+.user-ava { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+.user-name { font-size: 13px; color: var(--text1); }
+.user-arrow { font-size: 11px; color: #bbb; }
+
+/* BODY */
+.i-body { flex: 1; display: flex; overflow: hidden; }
+
+/* SIDEBAR */
+.i-sidebar {
+  width: var(--sidebar-width); min-width: var(--sidebar-width);
+  background: #fff; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  transition: width .22s, min-width .22s;
+  overflow: hidden; flex-shrink: 0;
+}
+.i-sidebar.collapsed { width: var(--sidebar-collapsed-width); min-width: var(--sidebar-collapsed-width); }
+.sidebar-toggle {
+  height: 32px; display: flex; align-items: center;
+  padding: 0 12px; border-bottom: 1px solid var(--border);
+  cursor: pointer; color: #bbb; font-size: 15px; flex-shrink: 0;
+  transition: color .2s; justify-content: flex-end;
+}
+.i-sidebar.collapsed .sidebar-toggle { justify-content: center; }
+.sidebar-toggle:hover { color: var(--primary); }
+.sidebar-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; }
+.s-menu { list-style: none; padding: 4px 0; }
+.s-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 16px; height: 40px;
+  cursor: pointer; color: var(--text2); font-size: 13px;
+  transition: all .15s; white-space: nowrap; overflow: hidden;
+}
+.s-menu-item:hover { background: #f5f7fa; color: var(--primary); }
+.s-menu-item.active { background: var(--primary-light); color: var(--primary); font-weight: 500; }
+.s-menu-item .s-icon { font-size: 15px; flex-shrink: 0; }
+.s-label { overflow: hidden; text-overflow: ellipsis; transition: opacity .2s; }
+.i-sidebar.collapsed .s-label { opacity: 0; width: 0; }
+.s-sub-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 16px; height: 40px; color: var(--text2); font-size: 13px;
+  cursor: pointer; transition: all .15s;
+}
+.s-sub-header:hover { background: #f5f7fa; color: var(--primary); }
+.s-sub-items { padding-left: 8px; }
+.s-sub-items .s-menu-item { padding-left: 32px; }
+
+/* MAIN */
+.i-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* TABS BAR */
+.tabs-bar {
+  height: 36px; background: #fff; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 8px; gap: 3px; flex-shrink: 0;
+}
+.tab-item {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0 10px; height: 26px; border: 1px solid var(--border);
+  border-radius: 3px; font-size: 12px; color: var(--text2);
+  cursor: pointer; background: #fafafa; white-space: nowrap;
+  transition: all .15s; flex-shrink: 0;
+}
+.tab-item:hover { color: var(--primary); border-color: var(--primary); }
+.tab-item.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tab-close { font-size: 10px; opacity: .55; }
+.tab-close:hover { opacity: 1; }
+.tabs-spacer { flex: 1; }
+.tabs-action { font-size: 13px; color: #bbb; cursor: pointer; padding: 3px 6px; border-radius: 3px; }
+.tabs-action:hover { background: #f5f7fa; color: var(--primary); }
+
+/* PAGE */
+.i-content { flex: 1; overflow-y: auto; background: var(--bg); }
+.page-wrap { padding: 12px; }
+
+/* ──────────── HOME PAGE ──────────── */
+.welcome-banner {
+  background: linear-gradient(135deg,#e8f4ff 0%,#f0f8ff 100%);
+  border: 1px solid #c5dcf7; border-radius: 4px; padding: 16px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.w-title { font-size: 17px; font-weight: 600; color: var(--primary); margin-bottom: 5px; }
+.w-sub { font-size: 13px; color: #666; }
+.w-date-num { font-size: 26px; font-weight: 700; color: var(--primary); text-align: right; }
+.w-date-wk { font-size: 13px; color: #999; text-align: right; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+.stat-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 4px;
+  padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+}
+.stat-icon-box { width: 46px; height: 46px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.stat-val { font-size: 24px; font-weight: 700; color: var(--text1); line-height: 1; margin-bottom: 4px; }
+.stat-lbl { font-size: 12px; color: var(--text3); }
+
+.shortcut-card { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; }
+.card-title { font-size: 14px; font-weight: 500; color: var(--text1); margin-bottom: 12px; }
+.shortcut-grid { display: grid; grid-template-columns: repeat(8,1fr); gap: 10px; }
+.sc-item {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 8px; border: 1px solid var(--border); border-radius: 6px;
+  cursor: pointer; font-size: 12px; color: var(--text2); transition: all .18s;
+}
+.sc-item:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.sc-icon { font-size: 22px; color: var(--primary); }
+
+/* ──────────── PLANNING PAGE ──────────── */
+.filter-card { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px 4px; margin-bottom: 10px; }
+.filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.filter-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.filter-label { color: var(--text2); white-space: nowrap; }
+.filter-input {
+  height: 28px; border: 1px solid var(--border); border-radius: 3px;
+  padding: 0 8px; font-size: 12px; color: var(--text1); outline: none;
+  transition: border-color .2s;
+}
+.filter-input:focus { border-color: var(--primary); }
+.filter-select { height: 28px; border: 1px solid var(--border); border-radius: 3px; padding: 0 6px; font-size: 12px; color: var(--text1); outline: none; }
+.btn { height: 28px; padding: 0 14px; border-radius: 3px; font-size: 12px; cursor: pointer; border: 1px solid; display: inline-flex; align-items: center; gap: 4px; transition: all .18s; }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.btn-default { background: #fff; border-color: var(--border); color: var(--text2); }
+.btn-default:hover { border-color: var(--primary); color: var(--primary); }
+.btn-success { background: #52c41a; border-color: #52c41a; color: #fff; }
+.btn-success:hover { background: #73d13d; border-color: #73d13d; }
+.btn-warning { background: #faad14; border-color: #faad14; color: #fff; }
+.btn-warning:hover { background: #ffc53d; border-color: #ffc53d; }
+.btn-sm { height: 24px; padding: 0 10px; font-size: 12px; }
+
+.plan-body { display: flex; gap: 10px; overflow: hidden; flex: 1; }
+.order-list-panel { width: 236px; min-width: 236px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+.order-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.order-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px; cursor: pointer; transition: all .15s; font-size: 12px;
+}
+.order-card:hover { border-color: var(--primary); }
+.order-card.active { border-color: var(--primary); background: var(--primary-light); }
+.order-card-top { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+.order-card-more { margin-left: auto; color: #bbb; font-size: 14px; cursor: pointer; }
+.tag { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 3px; font-size: 11px; }
+.tag-warning { background: #fff7e6; color: #d46b08; border: 1px solid #ffd591; }
+.tag-danger { background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e; }
+.tag-success { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+.tag-primary { background: var(--primary-light); color: var(--primary); border: 1px solid #91caff; }
+.tag-info { background: #f5f5f5; color: #595959; border: 1px solid #d9d9d9; }
+.oc-no { font-weight: 500; color: var(--text1); margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oc-info { color: var(--text3); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.order-pagination { padding: 6px 0; text-align: center; font-size: 12px; color: var(--text3); }
+.page-btns { display: flex; justify-content: center; gap: 4px; }
+.page-btn { width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; color: var(--text2); }
+.page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.page-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+.detail-panel { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.detail-hd-card { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; flex-shrink: 0; }
+.dh-row1 { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.dh-order-no { font-size: 14px; font-weight: 500; color: var(--text1); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.desc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 0; font-size: 12px; }
+.desc-item { display: flex; gap: 4px; }
+.desc-lbl { color: var(--text3); }
+.desc-val { color: var(--text1); }
+.link-btn { color: var(--primary); cursor: pointer; font-size: 12px; white-space: nowrap; }
+.link-btn:hover { color: var(--primary-hover); }
+
+.detail-tabs-card { background: #fff; border: 1px solid var(--border); border-radius: 4px; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.tab-header { display: flex; border-bottom: 1px solid var(--border); padding: 0 16px; }
+.tab-btn { padding: 8px 14px; font-size: 13px; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; transition: all .18s; margin-bottom: -1px; }
+.tab-btn:hover { color: var(--primary); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 500; }
+.tab-content { flex: 1; overflow: auto; padding: 12px 16px; }
+
+/* TABLE */
+.i-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.i-table th { background: #fafafa; color: var(--text2); font-weight: 500; height: 36px; padding: 0 10px; border: 1px solid var(--border); text-align: left; }
+.i-table td { height: 38px; padding: 0 10px; border: 1px solid var(--border); color: var(--text1); }
+.i-table tr:hover td { background: #f5f7fa; }
+.i-table .op-cell { display: flex; gap: 6px; align-items: center; }
+.text-link { color: var(--primary); cursor: pointer; }
+.text-link:hover { color: var(--primary-hover); }
+.text-link-danger { color: #ff4d4f; cursor: pointer; }
+.text-link-danger:hover { color: #ff7875; }
+
+.work-actions { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; gap: 12px; flex-wrap: wrap; }
+.plan-form-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.plan-form-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text2); }
+.action-btn-row { display: flex; gap: 8px; }
+
+.bom-path { font-size: 12px; color: var(--text3); padding: 4px 0 2px; }
+
+.empty-detail { flex: 1; background: #fff; border: 1px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 14px; }
+
+/* PLACEHOLDER PAGE */
+.placeholder-page { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; color: var(--text3); gap: 12px; }
+.placeholder-icon { font-size: 48px; color: #d9d9d9; }
+.placeholder-text { font-size: 14px; }
+
+/* ──────────── MODAL ──────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+.modal-box { background: #fff; border-radius: 6px; box-shadow: 0 8px 32px rgba(0,0,0,.15); display: flex; flex-direction: column; overflow: hidden; }
+.modal-hd { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.modal-title { font-size: 15px; font-weight: 600; color: var(--text1); }
+.modal-close { font-size: 18px; color: #bbb; cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+.modal-close:hover { background: #f5f5f5; color: #666; }
+.modal-bd { flex: 1; overflow: hidden; }
+.modal-ft { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+/* ──────────── WORK ORDER TABLE ──────────── */
+.work-order-table { min-width: 1800px; }
+.work-order-table th { background: #f5f7fa; font-size: 12px; font-weight: 500; color: var(--text2); padding: 6px 4px; border: 1px solid var(--border); white-space: nowrap; text-align: center; position: sticky; top: 0; z-index: 2; }
+.work-order-table td { padding: 4px; border: 1px solid var(--border); font-size: 12px; vertical-align: middle; }
+.work-order-table tr:hover td { background: #f5f7fa; }
+.cell-input { width: 100%; height: 28px; border: 1px solid transparent; border-radius: 2px; padding: 0 4px; font-size: 12px; color: var(--text1); background: transparent; outline: none; }
+.cell-input:hover { border-color: #d9d9d9; background: #fff; }
+.cell-input:focus { border-color: var(--primary); background: #fff; }
+.cell-select { width: 100%; height: 28px; border: 1px solid transparent; border-radius: 2px; padding: 0 2px; font-size: 12px; color: var(--text1); background: transparent; outline: none; cursor: pointer; }
+.cell-select:hover { border-color: #d9d9d9; background: #fff; }
+.cell-text { display: inline-block; padding: 0 4px; font-size: 12px; color: var(--text1); line-height: 28px; }
+.cell-select:focus { border-color: var(--primary); background: #fff; }
+
+/* 列设置侧边栏 */
+.column-panel { position:absolute; top:0; right:0; width:360px; height:100%; background:#fff; border-left:1px solid var(--border); box-shadow:-4px 0 16px rgba(0,0,0,.08); display:flex; flex-direction:column; transform:translateX(100%); transition:transform .25s; z-index:200; }
+.column-panel.open { transform:translateX(0); }
+.cp-hd { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); font-size:15px; font-weight:600; color:var(--text1); }
+.cp-close { font-size:18px; color:#bbb; cursor:pointer; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:4px; }
+.cp-close:hover { background:#f5f5f5; color:#666; }
+.cp-body { flex:1; overflow-y:auto; padding:0 20px; }
+.cp-table { width:100%; }
+.cp-tr { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid #f0f0f0; font-size:13px; color:var(--text1); }
+.cp-tr:hover { background:#f5f7fa; margin:0 -20px; padding-left:20px; padding-right:20px; }
+.cp-tr.disabled { color:#c0c4cc; }
+.cp-thead { font-weight:600; color:#606266; background:#fafafa; margin:0 -20px; padding-left:20px; padding-right:20px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:2; }
+.cp-td { flex-shrink:0; }
+.cp-name { flex:1; min-width:0; padding-right:12px; }
+.cp-check { width:55px; text-align:center; display:flex; justify-content:center; align-items:center; }
+.cp-check input[type="checkbox"] { width:16px; height:16px; cursor:pointer; }
+.cp-ft { display:flex; justify-content:flex-end; gap:10px; padding:12px 20px; border-top:1px solid var(--border); flex-shrink:0; }
+
+/* 列宽拖拽 */
+.work-order-table th.resizable { position:relative; }
+.work-order-table th.resizable::after { content:''; position:absolute; right:0; top:2px; bottom:2px; width:4px; cursor:col-resize; z-index:10; transition:background .15s; }
+.work-order-table th.resizable:hover::after { background:var(--primary); }
+
+/* 小按钮 */
+.btn-sm { padding:4px 12px; font-size:12px; height:28px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <div class="i-header">
+    <div class="logo">
+      <div class="logo-box">⊞</div>
+      <span class="logo-text">I-DOMS</span>
+    </div>
+    <nav class="header-nav">
+      <div v-for="item in navMenus" :key="item.key"
+        class="nav-item" :class="{active: activeModule===item.key}"
+        @click="switchModule(item.key)">
+        <span>{{ item.title }}</span>
+      </div>
+      <div class="nav-more-btn">
+        <span>···</span><span style="font-size:11px">更多</span>
+      </div>
+    </nav>
+    <div class="header-right">
+      <span class="h-icon" title="全屏">⤢</span>
+      <span class="h-icon" title="消息">🔔</span>
+      <div class="user-btn">
+        <div class="user-ava">A</div>
+        <span class="user-name">admin-admin</span>
+        <span class="user-arrow">▾</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="i-body">
+    <!-- SIDEBAR -->
+    <div class="i-sidebar" :class="{collapsed:sidebarCollapsed}">
+      <div class="sidebar-toggle" @click="sidebarCollapsed=!sidebarCollapsed">
+        <span>{{ sidebarCollapsed ? '→' : '←' }}</span>
+      </div>
+      <div class="sidebar-scroll">
+        <ul class="s-menu">
+          <li v-for="item in currentSideMenus" :key="item.path"
+            class="s-menu-item"
+            :class="{active: activePath===item.path}"
+            @click="navigateTo(item.path, item.title)">
+            <span class="s-icon">{{ item.icon }}</span>
+            <span class="s-label">{{ item.title }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="i-main">
+      <!-- TABS BAR -->
+      <div class="tabs-bar">
+        <div v-for="tab in openTabs" :key="tab.path"
+          class="tab-item" :class="{active: activePath===tab.path}"
+          @click="navigateTo(tab.path, tab.title)">
+          <span>{{ tab.title }}</span>
+          <span v-if="!tab.affix" class="tab-close" @click.stop="closeTab(tab.path)">✕</span>
+        </div>
+        <div class="tabs-spacer"></div>
+        <div class="tabs-action">▾</div>
+      </div>
+
+      <!-- PAGE CONTENT -->
+      <div class="i-content">
+        <!-- 首页 -->
+        <div v-if="activePath==='/home'" class="page-wrap">
+          <div class="welcome-banner">
+            <div>
+              <div class="w-title">欢迎使用 I-DOMS 智能制造执行系统</div>
+              <div class="w-sub">整合生产、质量、库存、计划等核心业务，提升制造效率</div>
+            </div>
+            <div>
+              <div class="w-date-num">5月28日</div>
+              <div class="w-date-wk">周四</div>
+            </div>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-card" v-for="s in homeStats" :key="s.label">
+              <div class="stat-icon-box" :style="{background:s.bg,color:s.color}">
+                <span>{{ s.icon }}</span>
+              </div>
+              <div>
+                <div class="stat-val">{{ s.value }}</div>
+                <div class="stat-lbl">{{ s.label }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="shortcut-card">
+            <div class="card-title">快捷入口</div>
+            <div class="shortcut-grid">
+              <div v-for="sc in shortcuts" :key="sc.path" class="sc-item"
+                @click="navigateTo(sc.path, sc.title); switchModule(sc.module)">
+                <span class="sc-icon">{{ sc.icon }}</span>
+                <span>{{ sc.title }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 计划排产 - 生产计划 -->
+        <div v-else-if="activePath==='/planning/production-plan'" class="page-wrap" style="display:flex;flex-direction:column;gap:0;height:100%;padding-bottom:0">
+          <!-- 过滤栏 -->
+          <div class="filter-card" style="margin-bottom:10px">
+            <div class="filter-row">
+              <div class="filter-item"><span class="filter-label">订单编号</span><input class="filter-input" placeholder="输入编号" style="width:130px"/></div>
+              <div class="filter-item"><span class="filter-label">客户名称</span><input class="filter-input" placeholder="输入客户" style="width:130px"/></div>
+              <div class="filter-item"><span class="filter-label">紧急度</span>
+                <select class="filter-select" style="width:90px"><option>全部</option><option>紧急</option><option>普通</option></select>
+              </div>
+              <div class="filter-item"><span class="filter-label">订单状态</span>
+                <select class="filter-select" style="width:100px"><option>请选择</option><option>待排产</option><option>部分下达</option><option>已完成</option></select>
+              </div>
+              <div class="filter-item"><span class="filter-label">订单日期</span>
+                <input type="date" class="filter-input" style="width:130px"/>
+                <span style="color:#bbb">至</span>
+                <input type="date" class="filter-input" style="width:130px"/>
+              </div>
+              <div class="filter-item">
+                <button class="btn btn-primary">🔍 查询</button>
+                <button class="btn btn-default" style="margin-left:6px">↺ 重置</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 主体 -->
+          <div class="plan-body" style="flex:1;overflow:hidden">
+            <!-- 左侧订单列表 -->
+            <div class="order-list-panel">
+              <div style="display:flex;justify-content:flex-end">
+                <button class="btn btn-default btn-sm">更多 ▾</button>
+              </div>
+              <div class="order-scroll">
+                <div v-for="od in planOrders" :key="od.id"
+                  class="order-card" :class="{active:selectedOrder&&selectedOrder.id===od.id}"
+                  @click="selectedOrder=od; selectedTab='work'">
+                  <div class="order-card-top">
+                    <span class="tag" :class="od.status==='done'?'tag-success':'tag-warning'">{{ od.statusText }}</span>
+                    <span v-if="od.overdue" class="tag tag-danger" style="margin-left:2px">已逾期</span>
+                    <span class="order-card-more">···</span>
+                  </div>
+                  <div class="oc-no">订单编号：{{ od.orderNo }}</div>
+                  <div class="oc-info">客户名称：{{ od.customer }}</div>
+                  <div class="oc-info">产品数量：{{ od.qty }}</div>
+                  <div class="oc-info">业务员：{{ od.salesman }}</div>
+                </div>
+              </div>
+              <div class="order-pagination">
+                <div class="page-btns">
+                  <span class="page-btn">‹</span>
+                  <span class="page-btn">1</span><span class="page-btn">2</span>
+                  <span class="page-btn">3</span><span class="page-btn active">4</span>
+                  <span class="page-btn">5</span><span class="page-btn">6</span>
+                  <span class="page-btn">›</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 右侧详情 -->
+            <div class="detail-panel" v-if="selectedOrder">
+              <div class="detail-hd-card">
+                <div class="dh-row1">
+                  <div class="dh-order-no">
+                    {{ selectedOrder.orderNo }} / 【{{ selectedOrder.customer }}】
+                    <span v-if="selectedOrder.overdue" class="tag tag-danger">已超交付过期0天</span>
+                    <span v-if="selectedOrder.overdue" class="tag tag-danger">已逾期</span>
+                  </div>
+                  <span class="link-btn">收起详情 ∧</span>
+                </div>
+                <div class="desc-grid">
+                  <div class="desc-item"><span class="desc-lbl">所属区域：</span><span class="desc-val">—</span></div>
+                  <div class="desc-item"><span class="desc-lbl">结算类型：</span><span class="desc-val">—</span></div>
+                  <div class="desc-item"><span class="desc-lbl">送货方式：</span><span class="desc-val">送货上门</span></div>
+                  <div class="desc-item"><span class="desc-lbl">业务员：</span><span class="desc-val">王磊</span></div>
+                  <div class="desc-item"><span class="desc-lbl">订单日期：</span><span class="desc-val">2026-04-13 08:54:52</span></div>
+                  <div class="desc-item"><span class="desc-lbl">备注：</span><span class="desc-val">—</span></div>
+                </div>
+              </div>
+              <div class="detail-tabs-card">
+                <div class="tab-header">
+                  <span class="tab-btn" :class="{active:selectedTab==='work'}" @click="selectedTab='work'">工作项</span>
+                  <span class="tab-btn" :class="{active:selectedTab==='merge'}" @click="selectedTab='merge'">合并统计</span>
+                  <span class="tab-btn" :class="{active:selectedTab==='orders'}" @click="selectedTab='orders'">所有工单</span>
+                  <span class="tab-btn" :class="{active:selectedTab==='log'}" @click="selectedTab='log'">操作日志</span>
+                </div>
+                <div class="tab-content">
+                  <!-- 工作项 Tab -->
+                  <div v-if="selectedTab==='work'">
+                    <table class="i-table" style="margin-bottom:12px">
+                      <thead>
+                        <tr>
+                          <th style="width:88px">状态</th>
+                          <th>产品名称</th>
+                          <th style="width:120px">产品编码</th>
+                          <th style="width:90px">产品属性</th>
+                          <th style="width:90px">产品类型</th>
+                          <th style="width:110px">型号</th>
+                          <th style="width:80px">规格属性</th>
+                          <th style="width:150px">交付日期</th>
+                          <th style="width:90px">操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td><span class="tag tag-warning">部分下达</span></td>
+                          <td>潜水电机</td><td>22.01.03.006</td><td>标准产品</td>
+                          <td>22.01.03.2...</td><td>YQST250-...</td><td>—</td>
+                          <td>2026-04-13 00:00:00</td>
+                          <td><div class="op-cell"><span class="text-link">收起</span><span style="color:#e4e7ed">|</span><span class="text-link-danger">终止</span></div></td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    <div class="work-actions">
+                      <div class="plan-form-row">
+                        <div class="plan-form-item">
+                          <span style="color:#ff4d4f">*</span> 计划装发日期
+                          <input type="date" class="filter-input" value="2026-04-13" style="width:130px"/>
+                        </div>
+                        <div class="plan-form-item">
+                          <span style="color:#ff4d4f">*</span> 计划完成日期
+                          <input type="date" class="filter-input" value="2026-04-13" style="width:130px"/>
+                        </div>
+                        <div class="plan-form-item">
+                          <span style="color:#ff4d4f">*</span> 调整紧急度
+                          <select class="filter-select" style="width:80px"><option>紧急</option><option>普通</option></select>
+                        </div>
+                      </div>
+                      <div class="action-btn-row">
+                        <button class="btn btn-primary">生成采购申请</button>
+                        <button class="btn btn-success" @click="showWorkOrderDialog=true">生成加工工单</button>
+                        <button class="btn btn-warning">生成外协工单</button>
+                      </div>
+                    </div>
+
+                    <div class="bom-path">潜水电机 / 潜水电机 / EB-2026-0003</div>
+                    <table class="i-table" style="margin-top:6px">
+                      <thead>
+                        <tr>
+                          <th style="width:75px">状态</th>
+                          <th>物料名称</th>
+                          <th style="width:115px">物料编码</th>
+                          <th style="width:120px">规格/型号</th>
+                          <th style="width:80px">规格属性</th>
+                          <th style="width:65px">材质</th>
+                          <th style="width:85px">物料类型</th>
+                          <th style="width:80px">单位用量</th>
+                          <th style="width:75px">计量单位</th>
+                          <th style="width:55px">来源</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="b in bomItems" :key="b.id">
+                          <td><span class="text-link" :class="b.st==='danger'?'text-link-danger':''">{{ b.statusText }}</span></td>
+                          <td>{{ b.name }}</td><td>{{ b.code }}</td><td>{{ b.spec }}</td>
+                          <td>{{ b.specAttr }}</td><td>{{ b.material }}</td>
+                          <td>{{ b.type }}</td><td style="text-align:right">{{ b.usage }}</td>
+                          <td style="text-align:center">{{ b.unit }}</td>
+                          <td style="text-align:center">{{ b.source }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- 其他 Tab 占位 -->
+                  <div v-else class="placeholder-page">
+                    <div class="placeholder-icon">📄</div>
+                    <div class="placeholder-text">功能开发中，敬请期待</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="empty-detail">
+              请从左侧选择一条生产计划
+            </div>
+          </div>
+        </div>
+
+        <!-- 其他页面 占位 -->
+        <div v-else class="page-wrap">
+          <div class="placeholder-page" style="min-height:400px">
+            <div class="placeholder-icon">🏗️</div>
+            <div class="placeholder-text">「{{ activePageTitle }}」功能开发中，敬请期待</div>
+            <button class="btn btn-primary btn-sm" @click="navigateTo('/home','首页');switchModule('home')">返回首页</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 生成加工工单弹窗 -->
+  <div v-if="showWorkOrderDialog" class="modal-overlay" @click.self="showWorkOrderDialog=false">
+    <div class="modal-box" style="width:96%;max-width:1400px;height:88vh;display:flex;flex-direction:column;position:relative">
+      <div class="modal-hd">
+        <span class="modal-title">生成加工工单（{{ workOrderData.length }}条）</span>
+        <span class="modal-close" @click="showWorkOrderDialog=false">✕</span>
+      </div>
+
+      <!-- 列设置按钮 -->
+      <div style="padding:8px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)">
+        <button class="btn btn-default btn-sm" @click="showColumnPanel=true">
+          <span style="margin-right:4px">⚙️</span>列设置
+        </button>
+        <span style="font-size:12px;color:#909399">提示：拖动表头右侧边线可调整列宽</span>
+      </div>
+
+      <div class="modal-bd" style="flex:1;overflow:auto;padding:0">
+        <div style="overflow:auto;max-height:calc(88vh - 120px)">
+          <table class="i-table work-order-table" ref="woTableRef">
+            <thead>
+              <tr>
+                <th v-if="colVisible('index')" :style="{width:colWidth('index')}" class="resizable" data-key="index">序号</th>
+                <th v-if="colVisible('productName')" class="resizable" data-key="productName">生产品名</th>
+                <th v-if="colVisible('materialCode')" :style="{width:colWidth('materialCode')}" class="resizable" data-key="materialCode">编码</th>
+                <th v-if="colVisible('materialSpec')" :style="{width:colWidth('materialSpec')}" class="resizable" data-key="materialSpec">规格型号</th>
+                <th v-if="colVisible('specAttr')" :style="{width:colWidth('specAttr')}" class="resizable" data-key="specAttr">规格属性</th>
+                <th v-if="colVisible('material')" :style="{width:colWidth('material')}" class="resizable" data-key="material">材质</th>
+                <th v-if="colVisible('bomVersion')" :style="{width:colWidth('bomVersion')}" class="resizable" data-key="bomVersion">BOM</th>
+                <th v-if="colVisible('processRoute')" :style="{width:colWidth('processRoute')}" class="resizable" data-key="processRoute">工艺路线</th>
+                <th v-if="colVisible('workCenter')" :style="{width:colWidth('workCenter')}" class="resizable" data-key="workCenter">工作中心</th>
+                <th v-if="colVisible('personInCharge')" :style="{width:colWidth('personInCharge')}" class="resizable" data-key="personInCharge">负责人</th>
+                <th v-if="colVisible('stockQty')" :style="{width:colWidth('stockQty')}" class="resizable" data-key="stockQty">库存数量</th>
+                <th v-if="colVisible('availableQty')" :style="{width:colWidth('availableQty')}" class="resizable" data-key="availableQty">可用库存</th>
+                <th v-if="colVisible('inTransitQty')" :style="{width:colWidth('inTransitQty')}" class="resizable" data-key="inTransitQty">在途数量</th>
+                <th v-if="colVisible('demandQty')" :style="{width:colWidth('demandQty')}" class="resizable" data-key="demandQty">需求数</th>
+                <th v-if="colVisible('gapQty')" :style="{width:colWidth('gapQty')}" class="resizable" data-key="gapQty">缺口数</th>
+                <th v-if="colVisible('planQty')" :style="{width:colWidth('planQty')}" class="resizable" data-key="planQty">计划数量</th>
+                <th v-if="colVisible('unit')" :style="{width:colWidth('unit')}" class="resizable" data-key="unit">计量单位</th>
+                <th v-if="colVisible('warehouse')" :style="{width:colWidth('warehouse')}" class="resizable" data-key="warehouse">预入仓库</th>
+                <th v-if="colVisible('urgency')" :style="{width:colWidth('urgency')}" class="resizable" data-key="urgency">紧急度</th>
+                <th v-if="colVisible('remark')" class="resizable" data-key="remark">备注</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row,i) in workOrderData" :key="row._id">
+                <td v-if="colVisible('index')">{{ i+1 }}</td>
+                <td v-if="colVisible('productName')"><span class="cell-text">{{ row.productName }}</span></td>
+                <td v-if="colVisible('materialCode')"><span class="cell-text">{{ row.materialCode }}</span></td>
+                <td v-if="colVisible('materialSpec')"><span class="cell-text">{{ row.materialSpec }}</span></td>
+                <td v-if="colVisible('specAttr')"><span class="cell-text">{{ row.specAttr }}</span></td>
+                <td v-if="colVisible('material')"><span class="cell-text">{{ row.material }}</span></td>
+                <td v-if="colVisible('bomVersion')"><span class="cell-text">{{ row.bomVersion }}</span></td>
+                <td v-if="colVisible('processRoute')">
+                  <select class="cell-select" v-model="row.processRoute">
+                    <option value="">请选择</option>
+                    <option value="铸造件加工路线">铸造件加工路线</option>
+                    <option value="机加标准路线">机加标准路线</option>
+                    <option value="精加工路线">精加工路线</option>
+                    <option value="装配路线">装配路线</option>
+                  </select>
+                </td>
+                <td v-if="colVisible('workCenter')">
+                  <select class="cell-select" v-model="row.workCenter">
+                    <option value="">请选择</option>
+                    <option value="默认工厂">默认工厂</option>
+                    <option value="机加车间一">机加车间一</option>
+                    <option value="机加车间二">机加车间二</option>
+                    <option value="装配车间">装配车间</option>
+                  </select>
+                </td>
+                <td v-if="colVisible('personInCharge')">
+                  <select class="cell-select" v-model="row.personInCharge">
+                    <option value="">请选择</option>
+                    <option value="孙翠丽">孙翠丽</option>
+                    <option value="张三">张三</option>
+                    <option value="李四">李四</option>
+                    <option value="王五">王五</option>
+                    <option value="赵六">赵六</option>
+                  </select>
+                </td>
+                <td v-if="colVisible('stockQty')" style="text-align:right"><span class="cell-text">{{ row.stockQty }}</span></td>
+                <td v-if="colVisible('availableQty')" style="text-align:right"><span class="cell-text">{{ row.availableQty }}</span></td>
+                <td v-if="colVisible('inTransitQty')" style="text-align:right"><span class="cell-text">{{ row.inTransitQty }}</span></td>
+                <td v-if="colVisible('demandQty')" style="text-align:right"><span class="cell-text bold-text">{{ row.demandQty }}</span></td>
+                <td v-if="colVisible('gapQty')" style="text-align:right"><span class="cell-text" :style="{color:(row.demandQty-row.planQty)>0?'#ff4d4f':'inherit',fontWeight:500}">{{ row.demandQty - row.planQty }}</span></td>
+                <td v-if="colVisible('planQty')"><input class="cell-input" v-model.number="row.planQty" style="width:70px;text-align:right;font-weight:500;color:var(--primary)"></td>
+                <td v-if="colVisible('unit')">
+                  <select class="cell-select" v-model="row.unit" style="width:60px">
+                    <option>件</option><option>个</option><option>套</option><option>kg</option><option>m</option>
+                  </select>
+                </td>
+                <td v-if="colVisible('warehouse')">
+                  <select class="cell-select" v-model="row.warehouse">
+                    <option value="">请选择</option>
+                    <option value="机加现场场仓">机加现场场仓</option>
+                    <option value="装配车间仓库">装配车间仓库</option>
+                    <option value="原材料仓库">原材料仓库</option>
+                    <option value="半成品仓库">半成品仓库</option>
+                    <option value="成品仓库">成品仓库</option>
+                  </select>
+                </td>
+                <td v-if="colVisible('urgency')">
+                  <select class="cell-select" v-model="row.urgency" style="width:70px">
+                    <option value="紧急">紧急</option>
+                    <option value="普通">普通</option>
+                    <option value="不紧急">不紧急</option>
+                  </select>
+                </td>
+                <td v-if="colVisible('remark')"><input class="cell-input" v-model="row.remark" placeholder="备注"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-ft">
+        <button class="btn btn-default" @click="showWorkOrderDialog=false">取 消</button>
+        <button class="btn btn-primary" @click="saveWorkOrder">保 存（{{ workOrderData.length }}条）</button>
+      </div>
+
+      <!-- 列显隐侧边栏 -->
+      <div class="column-panel" :class="{open:showColumnPanel}">
+        <div class="cp-hd">
+          <span>列显隐</span>
+          <span class="cp-close" @click="showColumnPanel=false">✕</span>
+        </div>
+        <div class="cp-body">
+          <div class="cp-table">
+            <div class="cp-tr cp-thead">
+              <span class="cp-td cp-name">列名</span>
+              <span class="cp-td cp-check">隐藏</span>
+              <span class="cp-td cp-check">冻结</span>
+              <span class="cp-td cp-check">过滤</span>
+              <span class="cp-td cp-check">排序</span>
+            </div>
+            <div v-for="col in columnList" :key="col.key" class="cp-tr" :class="{disabled:col.disabled}">
+              <span class="cp-td cp-name">{{ col.label }}</span>
+              <span class="cp-td cp-check">
+                <input type="checkbox" :checked="col.visible" @change="toggleColVisible(col.key)" :disabled="col.disabled">
+              </span>
+              <span class="cp-td cp-check"><input type="checkbox" v-model="col.frozen" disabled></span>
+              <span class="cp-td cp-check"><input type="checkbox" v-model="col.filterable" disabled></span>
+              <span class="cp-td cp-check"><input type="checkbox" v-model="col.sortable" disabled></span>
+            </div>
+          </div>
+        </div>
+        <div class="cp-ft">
+          <button class="btn btn-default btn-sm" @click="resetColumns">恢复默认</button>
+          <button class="btn btn-primary btn-sm" @click="showColumnPanel=false">确定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, reactive, watch, nextTick } = Vue
+
+createApp({
+  setup() {
+    const activeModule = ref('home')
+    const activePath = ref('/home')
+    const sidebarCollapsed = ref(false)
+    const selectedOrder = ref(null)
+    const selectedTab = ref('work')
+    const showWorkOrderDialog = ref(false)
+    const showColumnPanel = ref(false)
+
+    // 列配置
+    const defaultColumns = [
+      { key:'index', label:'序号', width:50, visible:true, disabled:true, frozen:false, filterable:false, sortable:false },
+      { key:'productName', label:'生产品名', width:0, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'materialCode', label:'编码', width:115, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'materialSpec', label:'规格型号', width:120, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'specAttr', label:'规格属性', width:80, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'material', label:'材质', width:55, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'bomVersion', label:'BOM', width:80, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'processRoute', label:'工艺路线', width:130, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'workCenter', label:'工作中心', width:120, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'personInCharge', label:'负责人', width:90, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'stockQty', label:'库存数量', width:75, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'availableQty', label:'可用库存', width:75, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'inTransitQty', label:'在途数量', width:75, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'demandQty', label:'需求数', width:70, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'gapQty', label:'缺口数', width:70, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'planQty', label:'计划数量', width:85, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'unit', label:'计量单位', width:75, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'warehouse', label:'预入仓库', width:120, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'urgency', label:'紧急度', width:80, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+      { key:'remark', label:'备注', width:0, visible:true, disabled:false, frozen:false, filterable:false, sortable:false },
+    ]
+    const columnList = ref(JSON.parse(JSON.stringify(defaultColumns)))
+    function colVisible(key) { return columnList.value.find(c=>c.key===key)?.visible ?? true }
+    function colWidth(key) { const w = columnList.value.find(c=>c.key===key)?.width; return w ? w+'px' : 'auto' }
+    function toggleColVisible(key) {
+      const col = columnList.value.find(c=>c.key===key)
+      if(!col || col.disabled) return
+      col.visible = !col.visible
+      // 至少保留一列
+      if(!columnList.value.some(c=>c.visible && c.key!=='index')) {
+        col.visible = true
+        alert('至少需要保留一列可见')
+      }
+    }
+    function resetColumns() {
+      columnList.value = JSON.parse(JSON.stringify(defaultColumns))
+    }
+
+    // 列宽拖拽
+    let resizing = false, resizeCol = null, resizeStartX = 0, resizeStartW = 0
+    function attachResizeHandles() {
+      nextTick(() => {
+        const table = document.querySelector('.work-order-table')
+        if(!table) return
+        table.querySelectorAll('th.resizable').forEach(th => {
+          const key = th.getAttribute('data-key')
+          if(!key) return
+          const old = th.querySelector('.resize-handle')
+          if(old) old.remove()
+          const col = columnList.value.find(c=>c.key===key)
+          if(!col || col.disabled) return
+          const handle = document.createElement('div')
+          handle.className = 'resize-handle'
+          handle.style.cssText = 'position:absolute;right:0;top:0;width:5px;height:100%;cursor:col-resize;z-index:10;'
+          handle.onmousedown = (e) => {
+            resizing = true; resizeCol = col; resizeStartX = e.clientX
+            resizeStartW = th.getBoundingClientRect().width
+            document.body.style.cursor = 'col-resize'
+            document.body.style.userSelect = 'none'
+            document.onmousemove = (ev) => {
+              if(!resizing || !resizeCol) return
+              resizeCol.width = Math.max(50, Math.round(resizeStartW + (ev.clientX - resizeStartX)))
+            }
+            document.onmouseup = () => {
+              resizing = false; resizeCol = null
+              document.body.style.cursor = ''; document.body.style.userSelect = ''
+              document.onmousemove = null; document.onmouseup = null
+              nextTick(() => attachResizeHandles())
+            }
+          }
+          th.style.position = 'relative'
+          th.appendChild(handle)
+        })
+      })
+    }
+    watch(showWorkOrderDialog, (val) => { if(val) setTimeout(()=>attachResizeHandles(), 200) })
+
+    let _woId = 1
+    const workOrderData = ref([
+      {_id:_woId++, productName:'下导轴承座毛坯', materialCode:'31.1.031.0023', materialSpec:'YQST250-750/4-...', specAttr:'标准', material:'钢', bomVersion:'潜水电机', processRoute:'机加标准路线', workCenter:'默认工厂', personInCharge:'孙翠丽', stockQty:12, availableQty:8, inTransitQty:4, demandQty:20, planQty:20, unit:'件', warehouse:'机加现场场仓', urgency:'普通', remark:''},
+      {_id:_woId++, productName:'下导轴承座毛坯', materialCode:'31.3.312.0019', materialSpec:'YQST250-75/4-7', specAttr:'标准', material:'毛胚', bomVersion:'潜水电机', processRoute:'', workCenter:'', personInCharge:'', stockQty:50, availableQty:30, inTransitQty:10, demandQty:100, planQty:null, unit:'件', warehouse:'', urgency:'紧急', remark:'加急'},
+      {_id:_woId++, productName:'下导轴承座毛坯', materialCode:'4.341.03', materialSpec:'86×68×...', specAttr:'左件', material:'钢', bomVersion:'潜水电机', processRoute:'', workCenter:'', personInCharge:'', stockQty:8, availableQty:5, inTransitQty:3, demandQty:15, planQty:null, unit:'件', warehouse:'', urgency:'普通', remark:''},
+    ])
+
+    const navMenus = [
+      {key:'home',title:'首页'},
+      {key:'process',title:'产品工艺'},
+      {key:'sales',title:'销售管理'},
+      {key:'planning',title:'计划排产'},
+      {key:'production',title:'生产管理'},
+      {key:'warehouse',title:'库存管理'},
+      {key:'quality',title:'质量管理'},
+      {key:'procurement',title:'采购管理'},
+      {key:'aftersale',title:'售后管理'},
+    ]
+
+    const allSideMenus = {
+      home: [{path:'/home',title:'工作台',icon:'🏠'}],
+      process: [{path:'/process/bom',title:'BOM管理',icon:'📐'},{path:'/process/route',title:'工艺路线',icon:'🔀'}],
+      sales: [{path:'/sales/order',title:'销售订单',icon:'📋'},{path:'/sales/customer',title:'客户管理',icon:'👥'}],
+      planning: [{path:'/planning/production-plan',title:'生产计划',icon:'📅'},{path:'/planning/design-task',title:'设计任务',icon:'✏️'}],
+      production: [{path:'/production/work-order',title:'工单管理',icon:'🔧'},{path:'/production/process',title:'工序管理',icon:'⚙️'}],
+      warehouse: [{path:'/warehouse/inventory',title:'库存查询',icon:'📦'},{path:'/warehouse/inbound',title:'入库管理',icon:'📥'},{path:'/warehouse/outbound',title:'出库管理',icon:'📤'}],
+      quality: [{path:'/quality/inspection',title:'质检管理',icon:'✅'},{path:'/quality/defect',title:'不良品管理',icon:'❌'}],
+      procurement: [{path:'/procurement/purchase-order',title:'采购订单',icon:'🛒'},{path:'/procurement/supplier',title:'供应商管理',icon:'🏭'}],
+      aftersale: [{path:'/aftersale/service',title:'售后工单',icon:'🎧'},{path:'/aftersale/complaint',title:'投诉管理',icon:'📝'}],
+    }
+
+    const currentSideMenus = computed(() => allSideMenus[activeModule.value] || [])
+
+    const openTabs = ref([{path:'/home',title:'首页',affix:true}])
+
+    const homeStats = [
+      {label:'今日生产计划',value:'12',icon:'📅',bg:'#e8f4ff',color:'#1677ff'},
+      {label:'在制工单',value:'36',icon:'⚙️',bg:'#fff7e6',color:'#d46b08'},
+      {label:'库存预警',value:'5',icon:'⚠️',bg:'#fff1f0',color:'#cf1322'},
+      {label:'待检任务',value:'8',icon:'✅',bg:'#f6ffed',color:'#389e0d'},
+    ]
+
+    const shortcuts = [
+      {title:'生产计划',path:'/planning/production-plan',icon:'📅',module:'planning'},
+      {title:'工单管理',path:'/production/work-order',icon:'⚙️',module:'production'},
+      {title:'库存查询',path:'/warehouse/inventory',icon:'📦',module:'warehouse'},
+      {title:'质检管理',path:'/quality/inspection',icon:'✅',module:'quality'},
+      {title:'采购订单',path:'/procurement/purchase-order',icon:'🛒',module:'procurement'},
+      {title:'产品工艺',path:'/process/bom',icon:'📐',module:'process'},
+      {title:'销售订单',path:'/sales/order',icon:'📋',module:'sales'},
+      {title:'售后工单',path:'/aftersale/service',icon:'🎧',module:'aftersale'},
+    ]
+
+    const planOrders = [
+      {id:1,orderNo:'1-2026-123',customer:'山东博润泵业科技有限公司',qty:1,salesman:'王磊',status:'partial',statusText:'部分下达',overdue:true},
+      {id:2,orderNo:'1-2026-0002',customer:'兴隆县千华旅游开发有限公司',qty:5,salesman:'王磊',status:'partial',statusText:'部分下达',overdue:true},
+      {id:3,orderNo:'1-2026-0003',customer:'平邑县自来水公司',qty:5,salesman:'王磊',status:'partial',statusText:'部分下达',overdue:true},
+      {id:4,orderNo:'1-2026-0031',customer:'山东博润泵业科技有限公司',qty:4,salesman:'王磊',status:'done',statusText:'已完成',overdue:false},
+    ]
+
+    const bomItems = [
+      {id:1,statusText:'进行中',st:'primary',name:'下导轴承组装',code:'31.1.031.0023',spec:'YQST250-75...',specAttr:'',material:'',type:'',usage:1,unit:'件',source:'自'},
+      {id:2,statusText:'待下达',st:'danger',name:'下导轴...',code:'31.3.312.0019',spec:'YQST250-75...',specAttr:'',material:'毛胚',type:'',usage:1,unit:'件',source:'自'},
+      {id:3,statusText:'待下达',st:'danger',name:'导轴承(左)',code:'4.341.033',spec:'86×68×50',specAttr:'',material:'',type:'',usage:1,unit:'件',source:'外'},
+      {id:4,statusText:'待下达',st:'danger',name:'导轴承(右)',code:'4.341.034',spec:'86×68×50',specAttr:'',material:'',type:'',usage:1,unit:'件',source:'外'},
+    ]
+
+    const activePageTitle = computed(() => {
+      for (const menus of Object.values(allSideMenus)) {
+        const found = menus.find(m => m.path === activePath.value)
+        if (found) return found.title
+      }
+      return activePath.value
+    })
+
+    const switchModule = (key) => {
+      activeModule.value = key
+      const firstMenu = allSideMenus[key]?.[0]
+      if (firstMenu) navigateTo(firstMenu.path, firstMenu.title)
+    }
+
+    const navigateTo = (path, title) => {
+      activePath.value = path
+      const exists = openTabs.value.find(t => t.path === path)
+      if (!exists) openTabs.value.push({path, title})
+      // 同步激活模块
+      for (const [mod, menus] of Object.entries(allSideMenus)) {
+        if (menus.find(m => m.path === path)) {
+          activeModule.value = mod
+          break
+        }
+      }
+    }
+
+    const closeTab = (path) => {
+      const idx = openTabs.value.findIndex(t => t.path === path)
+      if (idx > -1) openTabs.value.splice(idx, 1)
+      if (activePath.value === path) {
+        const prev = openTabs.value[idx - 1] || openTabs.value[0]
+        if (prev) navigateTo(prev.path, prev.title)
+      }
+    }
+
+    // 默认选中第一个订单
+    selectedOrder.value = planOrders[0]
+
+    const saveWorkOrder = () => {
+      alert(`已保存 ${workOrderData.value.length} 条工单记录`)
+      showWorkOrderDialog.value = false
+    }
+
+    return {
+      activeModule, activePath, sidebarCollapsed,
+      navMenus, currentSideMenus, openTabs,
+      homeStats, shortcuts,
+      planOrders, selectedOrder, selectedTab, bomItems,
+      activePageTitle,
+      switchModule, navigateTo, closeTab,
+      showWorkOrderDialog, workOrderData, saveWorkOrder,
+      showColumnPanel, columnList, colVisible, colWidth, toggleColVisible, resetColumns,
+    }
+  }
+}).mount('#app')
+</script>
+</body>
+</html>
