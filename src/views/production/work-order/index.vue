@@ -126,7 +126,16 @@
                 <el-icon class="order-more-btn"><MoreFilled /></el-icon>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="urgency">
+                    <el-dropdown-item command="edit">
+                      <el-icon><Edit /></el-icon> 编辑
+                    </el-dropdown-item>
+                    <el-dropdown-item command="clone">
+                      <el-icon><CopyDocument /></el-icon> 克隆
+                    </el-dropdown-item>
+                    <el-dropdown-item command="delete" divided>
+                      <el-icon><Delete /></el-icon> 删除
+                    </el-dropdown-item>
+                    <el-dropdown-item command="urgency" divided>
                       <el-icon><Warning /></el-icon> 调整紧急度
                     </el-dropdown-item>
                     <el-dropdown-item command="pause" :disabled="order.status !== 'executing' || order.executionStatus === 'terminated'">
@@ -176,19 +185,17 @@
 
       <!-- 右侧详情区 -->
       <div class="detail-panel" v-if="selectedOrder">
-        <!-- 工单基础信息 -->
+        <!-- 工单头部 + Tab -->
         <el-card shadow="never" class="detail-header-card">
           <div class="detail-header">
             <div class="detail-title">
               {{ selectedOrder.workOrderNo }} / {{ selectedOrder.workOrderName }}
             </div>
-            <el-link type="primary" class="expand-btn" @click="toggleInfoCollapse">
-              {{ infoCollapsed ? '展开详情 ∨' : '收起详情 ∧' }}
-            </el-link>
           </div>
 
-          <el-collapse-transition>
-            <div v-show="!infoCollapsed">
+          <el-tabs v-model="activeTab">
+            <el-tab-pane label="工单下发" name="dispatch">
+              <!-- 基本信息表单 -->
               <el-form
                 ref="basicInfoForm"
                 :model="selectedOrder"
@@ -293,18 +300,8 @@
                   </el-col>
                 </el-row>
               </el-form>
-            </div>
-          </el-collapse-transition>
-        </el-card>
 
-        <!-- 详情 Tab 区域 -->
-        <el-card shadow="never" class="detail-tabs-card">
-          <el-tabs v-model="activeTab">
-            <el-tab-pane
-              v-if="selectedOrder.status === 'pending'"
-              label="工单下发"
-              name="dispatch"
-            >
+              <!-- 工序表格 -->
               <DispatchTab
                 :work-order="selectedOrder"
                 @dispatch="handleDispatch"
@@ -312,6 +309,7 @@
                 @cancel="handleCancelDispatch"
               />
             </el-tab-pane>
+
             <el-tab-pane label="工单详情" name="detail">
               <PlaceholderPage />
             </el-tab-pane>
@@ -365,11 +363,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search, RefreshLeft, Plus, Document, Download, Upload, TopRight,
-  MoreFilled, Warning, VideoPause, CircleClose, CircleCheck
+  MoreFilled, Warning, VideoPause, CircleClose, CircleCheck,
+  Edit, CopyDocument, Delete
 } from '@element-plus/icons-vue'
 import PlaceholderPage from '@/components/common/PlaceholderPage.vue'
 import DispatchTab from './components/DispatchTab.vue'
@@ -395,7 +394,6 @@ const pagination = reactive({
 const loading = ref(false)
 const activeTab = ref('dispatch')
 const selectedOrder = ref(null)
-const infoCollapsed = ref(false)
 const createDialogVisible = ref(false)
 const urgencyDialogVisible = ref(false)
 const currentEditOrder = ref(null)
@@ -535,10 +533,6 @@ const handleOrderSelect = (order) => {
   activeTab.value = getDefaultTab(order.status)
 }
 
-const toggleInfoCollapse = () => {
-  infoCollapsed.value = !infoCollapsed.value
-}
-
 const fetchOrderList = () => {
   // TODO: 调用 productionApi.getWorkOrderPage(params)
   pagination.total = workOrderList.value.length
@@ -610,7 +604,45 @@ const handleBatchDispatch = () => {
 // ========== 卡片操作菜单 ==========
 const handleCardCommand = (command, order) => {
   currentEditOrder.value = order
-  if (command === 'urgency') {
+  if (command === 'edit') {
+    ElMessage.info(`编辑工单「${order.workOrderNo}」`)
+    // TODO: 打开编辑弹窗
+  } else if (command === 'clone') {
+    ElMessageBox.confirm(`确定克隆工单「${order.workOrderNo}」？将生成一份新的工单草稿。`, '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'info',
+    }).then(() => {
+      const cloned = JSON.parse(JSON.stringify(order))
+      cloned.id = Math.max(...workOrderList.value.map(o => o.id)) + 1
+      cloned.workOrderNo = `WO-2026-${String(cloned.id).padStart(4, '0')}`
+      cloned.status = 'pending'
+      cloned.statusText = '待下发'
+      cloned.executionStatus = 'normal'
+      workOrderList.value.unshift(cloned)
+      selectedOrder.value = cloned
+      activeTab.value = 'dispatch'
+      pagination.total = workOrderList.value.length
+      ElMessage.success('工单克隆成功')
+    }).catch(() => {})
+  } else if (command === 'delete') {
+    ElMessageBox.confirm(`确定删除工单「${order.workOrderNo}」？删除后不可恢复。`, '警告', {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'error',
+    }).then(() => {
+      const idx = workOrderList.value.findIndex(o => o.id === order.id)
+      workOrderList.value.splice(idx, 1)
+      if (selectedOrder.value?.id === order.id) {
+        selectedOrder.value = workOrderList.value.length > 0 ? workOrderList.value[0] : null
+        if (selectedOrder.value) {
+          activeTab.value = getDefaultTab(selectedOrder.value.status)
+        }
+      }
+      pagination.total = workOrderList.value.length
+      ElMessage.success('工单已删除')
+    }).catch(() => {})
+  } else if (command === 'urgency') {
     newUrgency.value = order.urgency
     urgencyDialogVisible.value = true
   } else if (command === 'pause') {
@@ -662,16 +694,6 @@ onMounted(() => {
     activeTab.value = getDefaultTab(selectedOrder.value.status)
   }
 })
-
-// 监听选中工单变化，动态调整tab
-watch(
-  () => selectedOrder.value?.status,
-  (newStatus) => {
-    if (newStatus && newStatus !== 'pending' && activeTab.value === 'dispatch') {
-      activeTab.value = 'detail'
-    }
-  }
-)
 </script>
 
 <style scoped>
@@ -865,18 +887,26 @@ watch(
 }
 
 .detail-header-card {
-  flex-shrink: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 :deep(.detail-header-card .el-card__body) {
-  padding: 10px 12px;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 0;
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
+  flex-shrink: 0;
 }
 
 .detail-title {
@@ -887,6 +917,25 @@ watch(
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+/* Tabs 占据剩余空间 */
+:deep(.detail-header-card .el-tabs) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:deep(.detail-header-card .el-tabs__header) {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+:deep(.detail-header-card .el-tabs__content) {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 0 0;
 }
 
 .basic-info-form {
@@ -919,32 +968,5 @@ watch(
   color: var(--text-regular);
   line-height: 28px;
   font-size: 13px;
-}
-
-.detail-tabs-card {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-:deep(.detail-tabs-card .el-card__body) {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-}
-
-:deep(.detail-tabs-card .el-tabs) {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-:deep(.detail-tabs-card .el-tabs__content) {
-  flex: 1;
-  overflow: auto;
-  padding: 12px;
 }
 </style>
