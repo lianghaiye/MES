@@ -10,23 +10,14 @@
     <template #header>
       <div class="dialog-header">
         <div class="dialog-title">生成加工工单 ({{ tableData.length }}条)</div>
-        <!-- 工单 Tab 切换（保留顶部工单位置导航） -->
-        <div class="work-tabs" v-if="workOrderTabs.length > 1">
-          <div
-            v-for="(tab, idx) in workOrderTabs"
-            :key="idx"
-            class="work-tab-item"
-            :class="{ active: activeWorkTab === idx }"
-            @click="activeWorkTab = idx"
-          >
-            {{ tab.name }}
-          </div>
-        </div>
       </div>
     </template>
 
     <!-- 表格工具栏 -->
     <div class="table-toolbar">
+      <span class="toolbar-hint">
+        提示：拖动表头右侧边线可调整列宽，双击单元格可直接编辑
+      </span>
       <el-button
         size="small"
         plain
@@ -35,9 +26,6 @@
       >
         列设置
       </el-button>
-      <span style="font-size:12px;color:#909399;margin-left:8px">
-        提示：拖动表头右侧边线可调整列宽，双击单元格可直接编辑
-      </span>
     </div>
 
     <!-- 扁平合并表：每行 = 一条物料明细 -->
@@ -504,7 +492,6 @@ const emit = defineEmits(['update:modelValue', 'save', 'submit'])
 
 const visible = ref(false)
 const tableRef = ref(null)
-const activeWorkTab = ref(0)
 const showColumnDrawer = ref(false)
 
 // 编辑状态管理
@@ -609,21 +596,6 @@ function handleResetColumns() {
   })
   ElMessage.success('已恢复默认列设置')
 }
-
-// ========== 工单 Tab 数据 ==========
-const workOrderTabs = ref([
-  { name: '下导轴承座毛坯' },
-  { name: '上导轴承座毛坯' },
-  { name: '下端环' },
-  { name: '下端环' },
-  { name: '上端环' },
-  { name: '下端环' },
-  { name: '电机壳' },
-  { name: '齿压板' },
-  { name: '钢丝压圈' },
-  { name: '定子复冲片' },
-  { name: '转子组装' },
-])
 
 // ========== 表格数据 ==========
 const tableData = ref([])
@@ -930,40 +902,17 @@ function handleExport() {
   color: #303133;
 }
 
-.work-tabs {
-  display: flex;
-  gap: 0;
-  overflow-x: auto;
-  padding-bottom: 2px;
-}
-
-.work-tab-item {
-  padding: 4px 14px;
-  font-size: 12px;
-  color: #606266;
-  cursor: pointer;
-  white-space: nowrap;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  border-radius: 4px 4px 0 0;
-}
-
-.work-tab-item:hover {
-  color: #1677ff;
-  background: #f5f8ff;
-}
-
-.work-tab-item.active {
-  color: #1677ff;
-  font-weight: 600;
-  border-bottom-color: #1677ff;
-}
-
 /* 表格工具栏 */
 .table-toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 8px;
+}
+
+.toolbar-hint {
+  font-size: 12px;
+  color: #909399;
 }
 
 .table-wrapper {
