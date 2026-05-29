@@ -16,7 +16,7 @@
     <!-- 表格工具栏 -->
     <div class="table-toolbar">
       <span class="toolbar-hint">
-        提示：拖动表头右侧边线可调整列宽，双击单元格可直接编辑
+        提示：拖动表头右侧边线可调整列宽，单击单元格可直接编辑
       </span>
       <el-button
         size="small"
@@ -127,7 +127,7 @@
               <el-option label="精加工路线" value="precision_route" />
               <el-option label="装配路线" value="assembly_route" />
             </el-select>
-            <span v-else class="editable-cell" :class="{ empty: !row.processRoute }" @dblclick.stop="startEdit(row, 'processRoute')">
+            <span v-else class="editable-cell" :class="{ empty: !row.processRoute }" @click.stop="startEdit(row, 'processRoute')">
               {{ processRouteMap[row.processRoute] || row.processRoute || '请选择' }}
             </span>
           </template>
@@ -156,7 +156,7 @@
               <el-option label="机加车间二" value="workshop_2" />
               <el-option label="装配车间" value="assembly_shop" />
             </el-select>
-            <span v-else class="editable-cell" :class="{ empty: !row.workCenter }" @dblclick.stop="startEdit(row, 'workCenter')">
+            <span v-else class="editable-cell" :class="{ empty: !row.workCenter }" @click.stop="startEdit(row, 'workCenter')">
               {{ workCenterMap[row.workCenter] || row.workCenter || '请选择' }}
             </span>
           </template>
@@ -186,7 +186,7 @@
               <el-option label="王五" value="王五" />
               <el-option label="赵六" value="赵六" />
             </el-select>
-            <span v-else class="editable-cell" :class="{ empty: !row.responsible }" @dblclick.stop="startEdit(row, 'responsible')">
+            <span v-else class="editable-cell" :class="{ empty: !row.responsible }" @click.stop="startEdit(row, 'responsible')">
               {{ row.responsible || '请选择' }}
             </span>
           </template>
@@ -280,7 +280,7 @@
               @change="handleEditChange(row)"
               @blur="finishEdit()"
             />
-            <span v-else class="editable-cell bold-text" @dblclick.stop="startEdit(row, 'planQty')">
+            <span v-else class="editable-cell bold-text" @click.stop="startEdit(row, 'planQty')">
               {{ row.planQty ?? '-' }}
             </span>
           </template>
@@ -309,7 +309,7 @@
               <el-option label="kg" value="kg" />
               <el-option label="m" value="m" />
             </el-select>
-            <span v-else class="editable-cell" @dblclick.stop="startEdit(row, 'unit')">
+            <span v-else class="editable-cell" @click.stop="startEdit(row, 'unit')">
               {{ row.unit || '-' }}
             </span>
           </template>
@@ -339,7 +339,7 @@
               <el-option label="半成品仓库" value="semi_finished" />
               <el-option label="成品仓库" value="finished_goods" />
             </el-select>
-            <span v-else class="editable-cell" :class="{ empty: !row.warehouse }" @dblclick.stop="startEdit(row, 'warehouse')">
+            <span v-else class="editable-cell" :class="{ empty: !row.warehouse }" @click.stop="startEdit(row, 'warehouse')">
               {{ warehouseMap[row.warehouse] || row.warehouse || '请选择' }}
             </span>
           </template>
@@ -365,8 +365,33 @@
               <el-option label="普通" value="normal" />
               <el-option label="不紧急" value="low" />
             </el-select>
-            <span v-else class="editable-cell" @dblclick.stop="startEdit(row, 'urgency')">
+            <span v-else class="editable-cell" @click.stop="startEdit(row, 'urgency')">
               <el-tag size="small" :type="urgencyMap[row.urgency]?.type">{{ urgencyMap[row.urgency]?.label || '-' }}</el-tag>
+            </span>
+          </template>
+        </el-table-column>
+
+        <el-table-column
+          v-if="columnMap.planTime.visible"
+          label="计划时间"
+          :width="columnMap.planTime.width"
+          :min-width="180"
+        >
+          <template #default="{ row }">
+            <el-date-picker
+              v-if="isEditing(row, 'planTime')"
+              v-model="editingRow.planTime"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="完成日期"
+              size="small"
+              style="width: 100%"
+              @change="handleEditChange(row)"
+              @blur="finishEdit()"
+            />
+            <span v-else class="editable-cell" @click.stop="startEdit(row, 'planTime')">
+              {{ formatPlanTime(row.planTime) }}
             </span>
           </template>
         </el-table-column>
@@ -390,7 +415,7 @@
               @blur="handleEditChange(row)"
               @keyup.enter="handleEditChange(row)"
             />
-            <span v-else class="editable-cell remark-cell" @dblclick.stop="startEdit(row, 'remark')">
+            <span v-else class="editable-cell remark-cell" @click.stop="startEdit(row, 'remark')">
               {{ row.remark || '' }}
             </span>
           </template>
@@ -401,10 +426,7 @@
     <!-- 底部操作 -->
     <template #footer>
       <div class="dialog-footer">
-        <div class="footer-left">
-          <el-button plain size="small" icon="RefreshLeft" @click="handleResetAll">重置</el-button>
-          <el-button type="primary" plain size="small" icon="Download" @click="handleExport">导出</el-button>
-        </div>
+        <div class="footer-left"></div>
         <div class="footer-right">
           <el-button size="small" @click="visible = false">取消</el-button>
           <el-button type="primary" size="small" @click="handleSaveAndSubmit">保存 ({{ tableData.length }}条)</el-button>
@@ -560,6 +582,7 @@ const defaultColumnConfig = [
   { key: 'unit', label: '计量单位', width: 75, visible: true, disabled: false, frozen: false, filterable: false, sortable: false },
   { key: 'warehouse', label: '预入仓库', width: 120, visible: true, disabled: false, frozen: false, filterable: false, sortable: false },
   { key: 'urgency', label: '紧急度', width: 80, visible: true, disabled: false, frozen: false, filterable: false, sortable: false },
+  { key: 'planTime', label: '计划时间', width: 180, visible: true, disabled: false, frozen: false, filterable: false, sortable: false },
   { key: 'remark', label: '备注', width: 150, visible: true, disabled: false, frozen: false, filterable: false, sortable: false },
 ]
 
@@ -601,6 +624,13 @@ function handleResetColumns() {
 const tableData = ref([])
 
 function loadTableData() {
+  // 所有数据添加 planTime 默认值：开始日期=今天，完成日期=今天+5天
+  const today = new Date()
+  const todayStr = today.toISOString().split('T')[0]
+  const endDate = new Date(today)
+  endDate.setDate(endDate.getDate() + 5)
+  const endStr = endDate.toISOString().split('T')[0]
+
   tableData.value = [
     {
       rowKey: 'wo1-m1',
@@ -622,6 +652,7 @@ function loadTableData() {
       unit: '件',
       warehouse: 'machine_warehouse',
       urgency: 'normal',
+      planTime: [todayStr, endStr],
       remark: '',
     },
     {
@@ -644,6 +675,7 @@ function loadTableData() {
       unit: '件',
       warehouse: '',
       urgency: 'urgent',
+      planTime: [todayStr, endStr],
       remark: '加急',
     },
     {
@@ -666,6 +698,7 @@ function loadTableData() {
       unit: '件',
       warehouse: '',
       urgency: 'normal',
+      planTime: [todayStr, endStr],
       remark: '',
     },
   ]
@@ -707,6 +740,7 @@ function handleCellDblClick(row, column) {
     '计量单位': 'unit',
     '预入仓库': 'warehouse',
     '紧急度': 'urgency',
+    '计划时间': 'planTime',
     '备注': 'remark',
   }
   const field = fieldMap[column.label]
@@ -719,7 +753,7 @@ function handleCellDblClick(row, column) {
 function cellClassName({ row, columnIndex }) {
   // 根据当前可见列动态计算可编辑列位置
   const visibleCols = columnList.filter(c => c.visible).map(c => c.key)
-  const editableKeys = ['processRoute', 'workCenter', 'responsible', 'planQty', 'unit', 'warehouse', 'urgency', 'remark']
+  const editableKeys = ['processRoute', 'workCenter', 'responsible', 'planQty', 'unit', 'warehouse', 'urgency', 'planTime', 'remark']
   const colKey = visibleCols[columnIndex]
   if (editableKeys.includes(colKey)) return 'cell-editable'
   return ''
@@ -849,6 +883,12 @@ function getSummaries({ columns, data }) {
     }
   })
   return sums
+}
+
+// ========== 辅助方法 ==========
+function formatPlanTime(val) {
+  if (!val || !Array.isArray(val) || val.length !== 2) return '请选择'
+  return `${val[0]} 至 ${val[1]}`
 }
 
 // ========== 操作方法 ==========
