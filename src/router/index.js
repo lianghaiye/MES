@@ -84,7 +84,7 @@ const moduleRoutes = [
       {
         path: 'work-order',
         name: 'WorkOrder',
-        component: () => import('@/views/production/index.vue'),
+        component: () => import('@/views/production/work-order/index.vue'),
         meta: { title: '工单管理', module: 'production' },
       },
     ],
